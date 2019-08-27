@@ -16,6 +16,10 @@ SELINUX=disabled
 
 Sau khi thay đổi, bạn cần phải khởi động lại máy.
 
+```
+# sudo systemctl reboot
+```
+
 ### Kích hoạt SELinux
 
 Thay đổi dòng sau trong file `/etc/selinux/config` để kích hoạt SELinux với trạng thái `enforcing`: 
@@ -110,3 +114,79 @@ Nếu không tìm thấy các gói cần thiết trong hệ thống của bạn,
 Nếu bạn muốn chỉ cài đặt một bộ gems cho một thành phần cụ thể, hãy đọc [Xây dựng từ mã nguồn](http://docs.opennebula.org/5.8/integration/references/compile.html#compile)
 nơi nó được giải thích sâu hơn.
 
+## Bước 5: Cài đặt và kích hoạt MySQL/MariaDB (Tuỳ chọn)
+
+Bạn có thể bỏ qua bước này nếu bạn chỉ muốn triển khai OpenNebula càng nhanh càng tốt, vì mặc định OpenNebula sẽ sử dụng SQLite
+làm cơ sở dữ liệu. Tuy nhiên nếu bạn đang triển khai phần này để sản xuất, kinh doanh, hoặc trong một môi trường quan trọng hơn, hãy đảm bảo thực hiện bước này để tạo cơ sở dữ liệu với MySQL/MariaDB.
+
+> Lưu ý rằng, chúng ta có thể chuyển từ SQLite sang MySQL/MariaDB, nhưng vì nó là khó và cồng kềnh để thực hiện và hoàn thành việc
+> chuyển cơ sở dữ liệu, nên nếu không chắc chắn bạn đủ khả năng thực hiện, hãu sử dụng MySQL/MariaDB ngay từ đầu.
+
+### Cài đặt
+
+Trước hết, bạn cần một máy chủ MySQL/MariaDB hoạt động. Bạn có thể triển khai một bản để cài đặt OpenNebula hoặc sử dụng lại mọi
+bản cài đặt có sẵn để triển khai và truy cập cho OpenNebula Front-end.
+
+Nếu không cần cài đặt mới, thực hiện các lệnh sau:
+
+```
+# sudo yum -y install mariadb-server mariadb
+# sudo systemctl enable mariadb
+# sudo systemctl start mariadb
+```
+
+Thiết lập mật khẩu của tài khoản root cho MariaDB sử dụng lệnh sau:
+
+```
+# sudo mysql_secure_installation
+```
+
+#### Cấu hình MySQL
+
+Bạn cần tạo cơ sở dữ liệu mới, ví dụ `opennebula`, thêm người dùng mới và cấp đặc quyền đối với cơ sở dữ liệu này:
+
+```
+$ mysql -u root -p
+Enter password:
+Welcome to the MySQL monitor. [...]
+
+mysql> CREATE DATABASE opennebula;
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> GRANT ALL PRIVILEGES ON opennebula.* TO 'oneadmin' IDENTIFIED BY '<thepassword>';
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> FLUSH PRIVILEGES;
+Query OK, 0 rows affected (0.00 sec)
+```
+
+#### Cấu hình OpenNebula
+
+Trước khi bạn chạy OpenNebula lần đầu tiên, bạn cần thiết lập cấu hình tại `/etc/one/oned.conf` với các chi tiết kết nối vào cơ sở
+dữ liệu mà bạn đã tạo và cấp đặc quyền.
+
+Chỉnh sửa dòng sau
+
+```
+DB = [ BACKEND = "sqlite" ]
+```
+sang
+
+```
+# DB = [ BACKEND = "sqlite" ]
+# Cấu hình mẫu cho MySQL 
+DB  =  [  backend  =  "mysql" , 
+       server   =  "localhost" , 
+       port     =  0 , 
+       user     =  "oneadmin" , 
+       passwd   =  "<thepassword>" , 
+       db_name  =  "opennebula"  ]
+```
+
+Các trường:
+
+* __server__: Địa chỉ máy chủ MySQL.
+* __port__: Cổng kết nối đến máy chủ MySQL. Nếu đặt là 0, cổng mặc định sẽ được sử dụng.
+* __user__: MySQL user-name.
+* __passwd__: MySQL password.
+* __db_name__: Tên của cơ sở dữ liệu mà OpenNebula sẽ sử dụng.
