@@ -127,7 +127,7 @@ làm cơ sở dữ liệu. Tuy nhiên nếu bạn đang triển khai phần này
 Trước hết, bạn cần một máy chủ MySQL/MariaDB hoạt động. Bạn có thể triển khai một bản để cài đặt OpenNebula hoặc sử dụng lại mọi
 bản cài đặt có sẵn để triển khai và truy cập cho OpenNebula Front-end.
 
-Nếu không cần cài đặt mới, thực hiện các lệnh sau:
+Nếu bạn cần cài đặt mới, thực hiện các lệnh sau:
 
 ```
 # sudo yum -y install mariadb-server mariadb
