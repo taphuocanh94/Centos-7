@@ -151,7 +151,7 @@ Enter password:
 Welcome to the MySQL monitor. [...]
 
 mysql> CREATE DATABASE opennebula;
-Query OK, 0 rows affected (0.00 sec)
+Query OK, 1 row affected (0.00 sec)
 
 mysql> GRANT ALL PRIVILEGES ON opennebula.* TO 'oneadmin' IDENTIFIED BY '<thepassword>';
 Query OK, 0 rows affected (0.00 sec)
