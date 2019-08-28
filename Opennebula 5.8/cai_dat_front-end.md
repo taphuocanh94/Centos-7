@@ -146,7 +146,7 @@ Thiết lập mật khẩu của tài khoản root cho MariaDB sử dụng lện
 Bạn cần tạo cơ sở dữ liệu mới, ví dụ `opennebula`, thêm người dùng mới và cấp đặc quyền đối với cơ sở dữ liệu này:
 
 ```
-$ mysql -u root -p
+# mysql -u root -p
 Enter password:
 Welcome to the MySQL monitor. [...]
 
@@ -190,3 +190,126 @@ Các trường:
 * __user__: MySQL user-name.
 * __passwd__: MySQL password.
 * __db_name__: Tên của cơ sở dữ liệu mà OpenNebula sẽ sử dụng.
+
+## Bước 6: Bắt đầu OpenNebula
+
+> Nếu bạn đang thực hiện nâng cấp, hãy bỏ qua bước này và các bước tiếp theo và quay lại tài liệu hướng dẫn nâng cấp.
+
+Cấu hình đăng nhập người dùng `oneadmin` theo các bước sau:
+
+Tệp tin `/var/lib/one/.one/one_auth` sẽ được tạo với một mật khẩu đăng nhập được tạo ngẫu nhiên cho tài khoản `oneadmin`. Nội dung tệp tin sẽ là `oneadmin:<password>`. Vui lòng thay đổi mật khẩu trước khi bắt đầu OpenNebula. Ví dụ, thực hiện lệnh sau:
+
+```
+# echo "oneadmin:mypassword" > /var/lib/one/.one/one_auth
+```
+
+> Điều này sẽ đặt mật khẩu cho tài khoản `oneadmin` tại lần khởi động đầu tiên. 
+> Từ thời điểm đó, bạn phải sử dụng lệnh `passwd oneuser` để thay đổi mật khẩu của `oneadmin`.
+> Thông tin thêm về các thay đổi mật khẩu của `oneadmin` [tại đây](http://docs.opennebula.org/5.8/operation/users_groups_management/manage_users.html#change-credentials)
+
+Bây giờ, máy chủ của bạn đã sẵn sàng để bắt đầu OpenNebula. Bạn có thể sử dụng lệnh `systemctl` như sau:
+
+```
+# systemctl start opennebula opennebula-sunstone
+```
+
+Hoặc sử dụng lệnh `service` như sau:
+
+```
+# service opennebula start
+# service opennebula-sunstone start
+```
+
+## Bước 7: Xác minh cài đặt
+
+Sau khi OpenNebula được khởi động lần đầu tiên, bạn nên kiểm tra xem các lẹnh có thể kết nối với OpenNebula daemon được hay không. Bạn có thể thực hiện trong Linux CLI hoặc với giao diện người dùng Sunstone.
+
+### Trong Linux CLI
+
+Tại Font-end, hãy chạy lệnh sau dưới dạng tài khoản oneadmin:
+
+```
+# oneuser show
+USER 0 INFORMATION
+ID              : 0
+NAME            : oneadmin
+GROUP           : oneadmin
+PASSWORD        : 3bc15c8aae3e4124dd409035f32ea2fd6835efc9
+AUTH_DRIVER     : core
+ENABLED         : Yes
+
+USER TEMPLATE
+TOKEN_PASSWORD="ec21d27e2fe4f9ed08a396cbd47b08b8e0a4ca3c"
+
+RESOURCE USAGE & QUOTAS
+```
+
+Nếu bạn nhận được một thông báo lỗi, thì OpenNebula daemon đã không thể khởi động đúng cách:
+
+```
+# oneuser show
+Failed to open TCP connection to localhost:2633 (Connection refused - connect(2) for "localhost" port 2633)
+```
+
+Nhật ký OpenNebula được đặt trong thư mục tại `/var/log/one`, bạn nên coi ít nhất là các tệp nhật ký lõi `oned.log` và lịch trình `sched.log`. Trong file `oned.log`, các thông báo lỗi được đánh dấu bằng tiền tố `[E]`.
+
+### Với giao diện người dùng Sunstone
+
+Bây giờ, bạn có thể thử đăng nhập vào giao diện web của Sunstone. Để làm điều này, điều huóng trình duyêt đến địa chỉ
+`http://<frontend_ip_address>:9869`. Nếu mọi thứ đều ổn, bạn sẽ nhìn thấy một form đăng nhập. Hãy thử đăng nhập bằng tên người dùng là `oneadmin` và mật khẩu bạn đã nhập trong tệp `/var/lib/one/.one/one_auth` trong Font-end của bạn.
+
+Nếu trang không tải được, hãy kiểm tra nhật ký lỗi tại `/var/log/one/sunstone.log` và `/var/log/one/sunstone.error`. Ngoài ra, đảm bảo rằng cổng TCP 9869 được cho phép thông qua bởi tường lửa.
+
+#### Với `firewall`, thực hiện như sau:
+
+Kiểm tra xem dịch vụ `firewall` có được kích hoạt hay không:
+
+```
+# sudo firewall-cmd --state
+running
+```
+
+Nếu bạn nhận được kết quả là *running*, nghĩa là dịch vụ được kích hoạt, hãy mở cổng `9869` bằng các lệnh sau:
+
+```
+# sudo firewall-cmd --add-port=9869/tcp --permanent
+# sudo firewall-cmd --reload
+```
+
+## Cấu trúc thư mục
+
+Bảng sau liệt kê một số đường dẫn đáng chú ý có sẵn trong Front-end của bạn sau khi cài đặt:
+
+
+|                 Path                |                                     Description                                      |
+|-------------------------------------|--------------------------------------------------------------------------------------|
+| `/etc/one/`                         | Các file cấu hình                                                                    |
+| `/var/log/one/`                     | Các file nhật ký, đáng chú ý: `oned.log`, `sched.log`, `sunstone.log` và `<vmid>.log`|
+| `/var/lib/one/`                     | Thư mục gốc tài khoản `oneadmin`                                                     |
+| `/var/lib/one/datastores/<dsid>/`   | Lưu trữ kho dữ liệu                                                                  |
+| `/var/lib/one/vms/<vmid>/`          | Các file hoạt động cho VMs (deployment file, transfer manager scripts, etc...)       |
+| `/var/lib/one/.one/one_auth`        | Thông tin xác thực tài khoản `oneadmin`                                              |
+| `/var/lib/one/remotes/`             | Probes and scripts that will be synced to the Hosts                                  |
+| `/var/lib/one/remotes/hooks/`       | Hook scripts                                                                         |
+| `/var/lib/one/remotes/vmm/`         | Virtual Machine Manager Driver scripts                                               |
+| `/var/lib/one/remotes/auth/`        | Authentication Driver scripts                                                        |
+| `/var/lib/one/remotes/im/`          | Information Manager (monitoring) Driver scripts                                      |
+| `/var/lib/one/remotes/market/`      | MarketPlace Driver scripts                                                           |
+| `/var/lib/one/remotes/datastore/`   | Datastore Driver scripts                                                             |
+| `/var/lib/one/remotes/vnm/`         | Networking Driver scripts                                                            |
+| `/var/lib/one/remotes/tm/`          | Transfer Manager Driver scripts                                                      |
+
+## Cấu hình tường lửa
+
+Danh sách các cổng được sử dụng bởi OpenNebula, các cổng này cần được mở để OpenNebula có thể làm hoạt động tốt:
+
+|                 Port              |                     Description                                                          |
+|-----------------------------------|------------------------------------------------------------------------------------------|
+| `9869`                            | Sunstone server.                                                                         |
+| `29876`                           | VNC proxy port, used for translating and redirecting VNC connections to the hypervisors. |
+| `2633`                            | OpenNebula daemon, main XML-RPC API endpoint.                                            |
+| `2474`                            | OneFlow server. This port only needs to be opened if OneFlow server is used.             |
+| `5030`                            | OneGate server. This port only needs to be opened if OneGate server is used.             |
+
+OpenNebula kết nối với các trình ảo hoá thông qua ssh (cổng 22). Ngoài ra, `oned` có thể kết nối với [Chợ tài nguyên của OpenNebula](https://marketplace.opennebula.systems/) và [kho chứa các ảnh tạo sẵn của Linux](https://images.linuxcontainers.org)
+để có danh sách các thiết bị khả dụng. Bạn nên mở các kết nối gửi đến các cổng giao thức này. Lưu ý: Đây là các cổng mặc định, mỗi thành phần có thể được cấu hình để liên kết với các cổng cụ thể hoặc sử dụng Proxy HTTP.
