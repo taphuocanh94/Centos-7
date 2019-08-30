@@ -77,6 +77,19 @@ các file `id_rsa`, `id_rsa.pub` và `authorized_keys` từ Front-end đến cá
 ```
 # ssh-keyscan <frontend> <node1> <node2> ... >> /var/lib/one/.ssh/known_hosts
 ```
+Chúng ta cũng cần kiểm tra máy chủ Front-end đã có một publick key `id_rsa` tại `/var/lib/one/.ssh/` chưa. Nếu chưa hay thực hiện lệnh:
+
+```
+# ssh-keygen -t rsa -b 4096 -C "your_email@domain.com"
+```
+
+Nhấn `Enter` để nhập đường dẫn sẽ chứa file `id_rsa` được tạo ra.
+
+```
+Enter file in which to save the key (/var/lib/one/.ssh/id_rsa):
+```
+
+Mặc định khi thực thi lệnh với người dùng oneadmin, đường dẫn sẽ là, `/var/lib/one/.ssh/id_rsa`. Nếu không đúng đường dẫn đó, bạn cần nhập lại chính xác như trên.
 
 Bây giừo chúng ta cần copy thư mục `/var/lib/one/.ssh` đến tất cả các máy chủ node. Phương pháp dễ nhất là đặt một mật khẩu tạm thời cho tài khoản `oneadmin` trong tất cả các máy chủ:
 
